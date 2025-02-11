@@ -33,12 +33,12 @@ if (seasonName == "winter") {
   print("It's winter! Time to stay cozy and warm.")
   # Winter = (Nov to April)
   dataFile <- "DataWinter.RData"
-  season <- c(11:12,1:4)
+  season <- c(11:12,1:2)
   SST <- 'SST_w'
   CHLOR <- 'Chlor_w'
   TSM <- 'TSM_w'
   SSH <- 'SSH_w'
-  nReport <- 500
+  nReport <- 500 #what this is? for summer was a 100 - I have changed to 500 too.
   predInd1 <- 4
   predInd2 <- 7
   predInd3 <- 10
@@ -48,12 +48,12 @@ if (seasonName == "winter") {
 
   # Summer = (May to October)
   dataFile <- "DataSummer.RData"
-  season <- c(5:10)
+  season <- c(5:8)
   SST <- 'SST_s'
   CHLOR <- 'Chlor_s'
   TSM <- 'TSM_s'
   SSH <- 'SSH_s'
-  nReport <- 100
+  nReport <- 500 #100
   predInd1 <- 3
   predInd2 <- 6
   predInd3 <- 9
@@ -138,14 +138,8 @@ fileName.detcov.obis <- paste ("spOccupancy_MultiSpp_FullArea/MultiSpp_OBIS_Dete
 file.detcov.obis <- read.table(file = fileName.detcov.obis , header = T)
 GridDetEnvList_Obis[[i]] <- assign(objName.detcov.obis, value = file.detcov.obis)
 
-## Import Detection Covs   *Add later OBIS det covs per species
-Grid_DetEnv_Tel <- read.table(file = "spOccupancy_MultiSpp_FullArea/Grid_DetCovs.txt", header = T)
-# Grid_DetEnv_Obis <- read.table(file = "spOccupancy_MultiSpp_FullArea/MultiSpp_OBIS_DetectCovs_Sp7.txt", header = T)
-Grid_DetEnv <- read.table(file = "spOccupancy_MultiSpp_FullArea/Grid_DetCovs.txt", header = T)
-
-## Import data on occupancy covariates and full detect covariates  *Figure out why depth is not in the matrix
-# Grid_OccEnv <- read.table(file = "spOccupancy_MultiSpp_FullArea/Grid_OccEnv.txt", header = T)
-Grid_OccEnv <- read.table(file = "Grid_OccEnv_Seasonal.txt", header = T)
+## Import Detection Covs   *Add later OBIS det covs per species - all covs are in this file
+Grid_DetEnv_Tel_Seasonal <- read.table(file = "spOccupancy_MultiSpp_FullArea/Grid_DetCovs_Seasonal.txt", header = T)
 
 ## Create an empty matrix to compute Bayesian p-value and k-fold estimates
 ModelValid <- as.data.frame(matrix(NA, nrow = 1, ncol = 6))
@@ -166,27 +160,27 @@ SpDetectHistory_Obis <- spDetectList_Obis[[j]][,season]
 Grid_DetEnv_Obis <- GridDetEnvList_Obis[[j]] # May need add seasonal detection covs in the future
   
 ## Filter data and keep just the grids where the species can be detected 
-GridCellsToRemove_Tel <- as.numeric(names(which((rowSums(is.na(SpDetectHistory_Tel)) == 6))))
-GridCellsToRemove_Obis <- as.numeric(names(which((rowSums(is.na(SpDetectHistory_Obis)) == 6))))
+GridCellsToRemove_Tel <- as.numeric(names(which((rowSums(is.na(SpDetectHistory_Tel)) == 4))))
+GridCellsToRemove_Obis <- as.numeric(names(which((rowSums(is.na(SpDetectHistory_Obis)) == 4))))
   
 # === grab Telemetry data
-sp.y.tel <- as.matrix(SpDetectHistory_Tel[!rowSums(is.na(SpDetectHistory_Tel)) == 6, ])
-coords.tel <- as.matrix(Grid_OccEnv[as.numeric(row.names(sp.y.tel)), c(1, 2)])
-occ.covs.tel <- as.matrix(Grid_OccEnv[as.numeric(row.names(sp.y.tel)), c(3:18)]) ##**Add depth later
-det.covs.tel <- as.matrix(Grid_DetEnv_Tel[as.numeric(row.names(sp.y.tel)), c(1,8)])
+sp.y.tel <- as.matrix(SpDetectHistory_Tel[!rowSums(is.na(SpDetectHistory_Tel)) == 4, ])
+coords.tel <- as.matrix(Grid_DetEnv_Tel_Seasonal[as.numeric(row.names(sp.y.tel)), c(1, 2)])
+occ.covs.tel <- as.matrix(Grid_DetEnv_Tel_Seasonal[as.numeric(row.names(sp.y.tel)), c(3:18)]) ##**Add depth later
+det.covs.tel <- as.matrix(Grid_DetEnv_Tel_Seasonal[as.numeric(row.names(sp.y.tel)), c(1,19)])
 # Depth.tel <- as.matrix((det.covs.tel[, 1]))
-Depth.tel_RAW <- as.matrix(Grid_OccEnv[as.numeric(row.names(sp.y.tel)), "Depth"]) ##Add depth into detection covs
+Depth.tel_RAW <- as.matrix(Grid_DetEnv_Tel_Seasonal[as.numeric(row.names(sp.y.tel)), "Depth"]) ##Add depth into detection covs
 Depth.tel_RAW[Depth.tel_RAW >= 0] <- -0.1   # Remove positive values
 Depth.tel <- -Depth.tel_RAW  # Invert values to allow a log transformation
 NReceiv.tel <- as.matrix((det.covs.tel[, 2]))
 sites.tel <- as.numeric(rownames(sp.y.tel))
   
 # === grab Obis data
-sp.y.obis <- as.matrix(SpDetectHistory_Obis[!rowSums(is.na(SpDetectHistory_Obis)) == 6, ])
+sp.y.obis <- as.matrix(SpDetectHistory_Obis[!rowSums(is.na(SpDetectHistory_Obis)) == 4, ])
 # sp.y.obis[is.na(sp.y.obis)] <- 0
 coords.obis <- as.matrix(Grid_OccEnv[as.numeric(row.names(sp.y.obis)), c(1, 2)])
 occ.covs.obis <- as.matrix(Grid_OccEnv[as.numeric(row.names(sp.y.obis)), c(3:18)]) ##**Add depth later
-det.covs.obis <- as.matrix(Grid_DetEnv_Obis[!rowSums(is.na(SpDetectHistory_Obis)) == 6, c(1,2)])
+det.covs.obis <- as.matrix(Grid_DetEnv_Obis[!rowSums(is.na(SpDetectHistory_Obis)) == 4, c(1,2)])
 Depth.obis_RAW <- as.matrix((occ.covs.obis[, 1]))
 Depth.obis_RAW[Depth.obis_RAW >= 0] <- -0.1  # Remove positive values
 Depth.obis <- -Depth.obis_RAW  # Invert values to allow a log transformation
@@ -235,21 +229,23 @@ sites.obis <- ObisIDs
 ##############################################################################
 ## Create an integrated occupancy covariates matrix for modeling predictors
 ##############################################################################
-# occ.covs.int <- Grid_OccEnv[UniqueSites, 3, drop = FALSE]
-occ.covs.int <- Grid_OccEnv[UniqueSites, 3:18]   # Add depth
+if(seasonName == 'summer'){
+  occ.covs.int <- Grid_DetEnv_Tel_Seasonal[UniqueSites, c('Depth', 'SST_s', "Chlor_s", "TSM_s", "SSH_s")]
+} else{
+  occ.covs.int <- Grid_DetEnv_Tel_Seasonal[UniqueSites, c('Depth', 'SST_w', "Chlor_w", "TSM_w", "SSH_w")]
+  }
+colnames(occ.covs.int) <- c('Depth', 'SST', "Chlor", "TSM", "SSH") #put original names back so we don't need to change in the model
 occ.covs.int$Depth[occ.covs.int$Depth >= 0] <- -0.1 # Remove positive values
 occ.covs.int$Depth <- -occ.covs.int$Depth # Convert depth to positve
 rownames(occ.covs.int) <- CellSeqIDs[,1]
-coords.int <- Grid_OccEnv[UniqueSites, c(1,2)]
+coords.int <- Grid_DetEnv_Tel_Seasonal[UniqueSites, c(1,2)]
 rownames(coords.int) <- CellSeqIDs[,1]
-# occ.covs.int <- Grid_OccEnv[ , 3, drop = FALSE]
-# coords.int <- Grid_OccEnv[ , c(1,2)]
 ##############################################################################
 ##############################################################################
 ## Merge datasets to run the integrated model
 ##############################################################################
 # create detection / nondetection input for modeling
-y.int <- list(telemetry = sp.y.tel[,1:6], obis = sp.y.obis[,1:6])
+y.int <- list(telemetry = sp.y.tel[,1:4], obis = sp.y.obis[,1:4])
 # y.int <- list(telemetry = sp.y.tel, obis = sp.y.obis)
 rownames(y.int$telemetry) <- 1:dim(y.int$telemetry)[1]
 rownames(y.int$obis) <- 1:dim(y.int$obis)[1]
